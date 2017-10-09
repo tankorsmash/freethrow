@@ -94,8 +94,8 @@ class ItemOwned(object):
         self.market_marketable_restriction = data.get('market_marketable_restriction')
         self.marketable = data.get('marketable')
 
-        self.prices = None
-        self.market_data = None
+        self.prices = None #fill with an entry from a game's market list
+        self.market_data = None #fill with results from a specific item's api
 
         self._raw = data
 
