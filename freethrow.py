@@ -3,6 +3,10 @@
 import json
 import requests
 
+from pprint import pprint as pp
+
+from models import Item
+
 with open("private_config.json") as f:
     PRIVATE_CONFIG = json.load(f)
     STEAMAPIS_APIKEY = KEY = PRIVATE_CONFIG['steamapis_apikey']
@@ -19,8 +23,8 @@ def _do_request(url):
     response.raise_for_status()
     return response
 
-def get_your_game_inventory(app_id):
-    print('getting your inventory for app id {}...'.format(app_id), end='')
+def request_your_game_inventory(app_id):
+    print('requesting your inventory for app id {}...'.format(app_id), end='')
     url = "steam/inventory/{sid64}/{app_id}/{ctxt}/".format(
             sid64=STEAMID_64,
             app_id=PUBG_ID,
@@ -29,8 +33,30 @@ def get_your_game_inventory(app_id):
     print('done;')
     return response
 
-def get_game_inventory(app_id):
-    print('getting static inventory for app id {}...'.format(app_id), end='')
+def match_asset_to_description(assets, descriptions, cid):
+    asset = list(filter(lambda a: a['classid']==cid, assets))[0]
+    description = list(filter(lambda a: a['classid']==cid, descriptions))[0]
+
+    result = {}
+    result.update(**asset)
+    result.update(**description)
+    return result
+
+def get_your_game_inventory(app_id):
+    response = request_your_game_inventory(app_id)
+
+    assets = response.json()['assets']
+    descriptions = response.json()['descriptions']
+
+    items = []
+    for asset_data in assets:
+        item = Item(match_asset_to_description(assets, descriptions, asset_data['classid']))
+        items.append(item)
+
+    return items
+
+def request_game_inventory(app_id):
+    print('requesting static inventory for app id {}...'.format(app_id), end='')
     url = "market/items/{app_id}/".format(
         app_id=PUBG_ID,
     )
@@ -39,5 +65,6 @@ def get_game_inventory(app_id):
     return response
 
 
-response = get_your_game_inventory(PUBG_ID)
-response = get_game_inventory(PUBG_ID)
+items = get_your_game_inventory(PUBG_ID)
+print ("found {} items".format(len(items)))
+# response = request_game_inventory(PUBG_ID)
