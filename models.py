@@ -38,7 +38,7 @@ class ItemMarketData(object):
         self.item = item
 
         self.median_avg_prices_15days = MedianAvgPrices15(
-            item, data.get('median_avg_prices_15days')
+            item, data.get('median_avg_prices_15days', [])
         )
         self.histogram = data.get('histogram')
 

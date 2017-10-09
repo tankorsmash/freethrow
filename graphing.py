@@ -18,6 +18,8 @@ def trendline(median_data, days=15):
         raise Exception("must be MedianAvgPrices15")
 
     data = median_data.data[-days:]
+    if len(data) == 0:
+        return 0.0
 
     x = np.arange(0, len(data))
     y = np.array(list(map(itemgetter(1), data)))

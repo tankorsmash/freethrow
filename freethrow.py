@@ -26,7 +26,11 @@ DEFAULT_CONTEXT = 2
 
 def _do_request(url):
     response = requests.get(BASE_URL+url, params={"api_key": STEAMAPIS_APIKEY})
-    response.raise_for_status()
+    try:
+        response.raise_for_status()
+    except Exception as e:
+        print(e)
+        import ipdb; ipdb.set_trace(); #TODO
     return response
 
 def match_asset_to_description(assets, descriptions, cid):
@@ -91,7 +95,7 @@ def get_game_market_data(app_id):
     market_data = models.GameMarketData(data)
     return market_data
 
-def request_market_data_for_item(app_id, market_hash_name):
+def request_market_data_for_app_and_name(app_id, market_hash_name):
     print('market data for app id {} and item {}...'.format(app_id, market_hash_name), end='')
     url = "market/item/{app_id}/{market_hash_name}".format(
         app_id=PUBG_ID,
@@ -102,12 +106,15 @@ def request_market_data_for_item(app_id, market_hash_name):
     return response
 
 def get_market_data_for_app_and_name(app_id, market_hash_name):
-    response = request_market_data_for_item(app_id, market_hash_name)
+    response = request_market_data_for_app_and_name(app_id, market_hash_name)
     data = response.json()
     return data
 
 def get_market_data_for_item(item):
-    data = get_market_data_for_app_and_name(item.appid, item.market_hash_name)
+    if not item.marketable:
+        data = {}
+    else:
+        data = get_market_data_for_app_and_name(item.appid, item.market_hash_name)
     item.fill_market_data(data)
     return data
 
@@ -115,14 +122,18 @@ def testing():
     pubg_market_data = get_game_market_data(PUBG_ID)
     items = get_your_game_inventory(PUBG_ID, market_data=pubg_market_data)
     print ("found {} items".format(len(items)))
-    item = items[0]
-    # item_data = get_market_data_for_app_and_name(PUBG_ID, item.market_hash_name)
-    get_market_data_for_item(item)
-    prices = item.prices
+    trendlines = []
+    for item in items:
+        get_market_data_for_item(item)
+        prices = item.prices
+        histogram = item.market_data.histogram
+        median_data = item.market_data.median_avg_prices_15days
+        if item.marketable:
+            trendlines.append((item.market_hash_name, median_data.trendlines()))
 
-    histogram = item.market_data.histogram
-    median_data = item.market_data.median_avg_prices_15days
-    pp(median_data.trendlines())
+    trendlines.sort(key=lambda tl: itemgetter(3)(tl[1]))
+    pp(trendlines[0])
+    pp(trendlines[-1])
     # pp(median_data.data)
     # x = list(map(dateutil.parser.parse, map(itemgetter(0), median_data)))
     # y = list(map(itemgetter(2), median_data))
