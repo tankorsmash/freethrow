@@ -23,6 +23,15 @@ def _do_request(url):
     response.raise_for_status()
     return response
 
+def match_asset_to_description(assets, descriptions, cid):
+    asset = list(filter(lambda a: a['classid']==cid, assets))[0]
+    description = list(filter(lambda a: a['classid']==cid, descriptions))[0]
+
+    result = {}
+    result.update(**asset)
+    result.update(**description)
+    return result
+
 def request_your_game_inventory(app_id):
     print('requesting your inventory for app id {}...'.format(app_id), end='')
     url = "steam/inventory/{sid64}/{app_id}/{ctxt}/".format(
@@ -33,16 +42,7 @@ def request_your_game_inventory(app_id):
     print('done;')
     return response
 
-def match_asset_to_description(assets, descriptions, cid):
-    asset = list(filter(lambda a: a['classid']==cid, assets))[0]
-    description = list(filter(lambda a: a['classid']==cid, descriptions))[0]
-
-    result = {}
-    result.update(**asset)
-    result.update(**description)
-    return result
-
-def get_your_game_inventory(app_id):
+def get_your_game_inventory(app_id, market_data=None):
     response = request_your_game_inventory(app_id)
 
     assets = response.json()['assets']
@@ -50,12 +50,15 @@ def get_your_game_inventory(app_id):
 
     items = []
     for asset_data in assets:
-        item = Item(match_asset_to_description(assets, descriptions, asset_data['classid']))
+        data = match_asset_to_description(assets, descriptions, asset_data['classid'])
+        if market_data is not None:
+            data['prices'] = list(filter(lambda md: md['nameID'] == data['classid'], market_data))
+        item = Item(data)
         items.append(item)
 
     return items
 
-def request_game_inventory(app_id):
+def request_game_market_data(app_id):
     print('requesting static inventory for app id {}...'.format(app_id), end='')
     url = "market/items/{app_id}/".format(
         app_id=PUBG_ID,
@@ -64,7 +67,12 @@ def request_game_inventory(app_id):
     response = _do_request(url)
     return response
 
+def get_game_market_data(app_id):
+    response = request_game_market_data(app_id)
+    return response.json()['data']
 
-items = get_your_game_inventory(PUBG_ID)
+
+pubg_market_data = get_game_market_data(PUBG_ID)
+items = get_your_game_inventory(PUBG_ID, market_data=pubg_market_data)
 print ("found {} items".format(len(items)))
 # response = request_game_inventory(PUBG_ID)
