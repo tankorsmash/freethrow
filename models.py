@@ -22,10 +22,10 @@ class Item(object):
     def __init__(self, data):
         self.name = data.get('name')
         self.market_hash_name = data.get('market_hash_name')
-        self.amount = data.get('amount')
+        self.amount = int(data.get('amount'))
 
-        self.appid = data.get('appid')
-        self.classid = data.get('classid')
+        self.appid = int(data.get('appid'))
+        self.classid = int(data.get('classid'))
 
         self.icon_url = data.get('icon_url')
         self.icon_url_large = data.get('icon_url_large')

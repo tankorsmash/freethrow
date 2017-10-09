@@ -1,6 +1,8 @@
 #!ipython3
 
 import json
+import dateutil
+from operator import itemgetter
 import requests
 
 from pprint import pprint as pp
@@ -47,12 +49,18 @@ def get_your_game_inventory(app_id, market_data=None):
 
     assets = response.json()['assets']
     descriptions = response.json()['descriptions']
+    if market_data is None:
+        print("no market data passed in, item.prices will be empty")
+        market_data = []
 
     items = []
     for asset_data in assets:
         data = match_asset_to_description(assets, descriptions, asset_data['classid'])
         if market_data is not None:
-            data['prices'] = list(filter(lambda md: md['nameID'] == data['classid'], market_data))
+            prices = list(filter(lambda md: md['market_hash_name'] == data['market_hash_name'], market_data))
+            data['prices'] = prices
+        # print(market_data)
+        # print(data['prices'])
         item = Item(data)
         items.append(item)
 
@@ -69,10 +77,40 @@ def request_game_market_data(app_id):
 
 def get_game_market_data(app_id):
     response = request_game_market_data(app_id)
-    return response.json()['data']
+    data = response.json()['data']
+    return data
+
+def request_market_data_for_item(app_id, market_hash_name):
+    print('market data for app id {} and item {}...'.format(app_id, market_hash_name), end='')
+    url = "market/item/{app_id}/{market_hash_name}".format(
+        app_id=PUBG_ID,
+        market_hash_name=market_hash_name,
+    )
+    print('done')
+    response = _do_request(url)
+    return response
+
+def get_market_data_for_item(app_id, market_hash_name):
+    response = request_market_data_for_item(app_id, market_hash_name)
+    data = response.json()
+    return data
+
 
 
 pubg_market_data = get_game_market_data(PUBG_ID)
 items = get_your_game_inventory(PUBG_ID, market_data=pubg_market_data)
 print ("found {} items".format(len(items)))
+item = items[0]
+item_data = get_market_data_for_item(PUBG_ID, item.market_hash_name)
+prices = item.prices
+# histogram = prices['histogram']
+
+import matplotlib.pyplot as plt
+import numpy as np
+median_data = item_data['median_avg_prices_15days']
+x = list(map(dateutil.parser.parse, map(itemgetter(0), median_data)))
+y = list(map(itemgetter(2), median_data))
+plt.plot(x, y)
+import ipdb; ipdb.set_trace(); #TODO
+# plt.plot_date(median_data)
 # response = request_game_inventory(PUBG_ID)
