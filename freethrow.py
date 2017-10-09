@@ -52,30 +52,31 @@ def request_your_game_inventory(app_id):
     print('done;')
     return response
 
+def bind_my_items_to_market_data(items, market_data):
+    for item in items:
+        prices = list(filter(
+            lambda md: md['market_hash_name'] == item.market_hash_name,
+            market_data.data
+        ))
+        if prices:
+            prices = prices[0]
+        else:
+            prices = {}
+
+        item.fill_prices_data(prices)
+
+
+
 def get_your_game_inventory(app_id, market_data=None):
     response = request_your_game_inventory(app_id)
 
     assets = response.json()['assets']
     descriptions = response.json()['descriptions']
-    if market_data is None:
-        print("no market data passed in, item.prices will be empty")
-        market_data = []
 
     items = []
     for asset_data in assets:
         data = match_asset_to_description(assets, descriptions, asset_data['classid'])
-        if market_data is not None:
-            prices = list(filter(
-                lambda md: md['market_hash_name'] == data['market_hash_name'],
-                market_data.data
-            ))
-            if prices:
-                data['prices'] = prices[0]
-            else:
-                data['prices'] = {}
-        # print(market_data)
-        # print(data['prices'])
-        item = models.Item(data)
+        item = models.ItemOwned(data)
         items.append(item)
 
     return items
@@ -120,7 +121,8 @@ def get_market_data_for_item(item):
 
 def old_test():
     pubg_market_data = get_game_market_data(PUBG_ID)
-    items = get_your_game_inventory(PUBG_ID, market_data=pubg_market_data)
+    items = get_your_game_inventory(PUBG_ID)
+    bind_my_items_to_market_data(items, pubg_market_data)
     print ("found {} items".format(len(items)))
     trendlines = []
     for item in items:
@@ -144,14 +146,14 @@ def old_test():
 
 def testing():
     pubg_market_data = get_game_market_data(PUBG_ID)
-    raw_items = []
-    for item_market_data in pubg_market_data.data:
-        data = get_market_data_for_app_and_name(PUBG_ID, item_market_data['market_hash_name'])
-        raw_items.append(data)
+    item_mds = []
+    for imd in pubg_market_data.data:
+        data = get_market_data_for_app_and_name(PUBG_ID, imd['market_hash_name'])
+        item_market_data = models.ItemMarketData(data)
+        item_mds.append(item_market_data)
 
-    import ipdb; ipdb.set_trace(); #TODO
 
 
 if __name__ == "__main__":
     old_test()
-    # testing()
+    testing()

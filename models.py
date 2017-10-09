@@ -52,7 +52,7 @@ class ItemMarketData(object):
         return "<{}>".format(str(self))
 
 
-class ItemPrices(object):
+class ItemPricesData(object):
     def __init__(self, data):
         self.market_hash_name = data.get('market_hash_name')
 
@@ -78,8 +78,7 @@ class ItemPrices(object):
     def __repr__(self):
         return "<{}>".format(str(self))
 
-
-class Item(object):
+class ItemOwned(object):
     def __init__(self, data):
         self.name = data.get('name')
         self.market_hash_name = data.get('market_hash_name')
@@ -95,16 +94,19 @@ class Item(object):
         self.market_marketable_restriction = data.get('market_marketable_restriction')
         self.marketable = data.get('marketable')
 
-        self.prices = ItemPrices(data.get('prices'))
+        self.prices = None
         self.market_data = None
 
         self._raw = data
+
+    def fill_prices_data(self, data):
+        self.prices = ItemPricesData(data)
 
     def fill_market_data(self, data):
         self.market_data = ItemMarketData(data)
 
     def __str__(self):
-        return "Item: {name}{amnt}::{cid}".format(
+        return "ItemOwned: {name}{amnt}::{cid}".format(
             name=self.market_hash_name,
             cid=self.classid,
             amnt="x"+self.amount if int(self.amount) > 1 else "",
