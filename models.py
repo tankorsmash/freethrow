@@ -118,7 +118,7 @@ class ItemOwned(object):
 
 class GameMarketData(object):
     def __init__(self, data):
-        self.appid = data.get('appid')
+        self.appid = data.get('appID')
         self.createdAt = data.get('createdAt')
 
         self.data = data.get('data')

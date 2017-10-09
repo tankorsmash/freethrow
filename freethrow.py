@@ -126,7 +126,7 @@ def get_and_fill_market_data_for_item(item):
     return data
 
 def exception_handler(request, exception):
-    print exception
+    print(exception)
     import ipdb; ipdb.set_trace(); #TODO
 
 def old_test():
@@ -161,14 +161,29 @@ def old_test():
 
 def testing():
     pubg_market_data = get_game_market_data(PUBG_ID)
+
+    pooled_reqs = []
+    for imd in pubg_market_data.data:
+        url = build_market_data_url_for_item(pubg_market_data.appid, imd['market_hash_name'])
+        pooled_reqs.append(grequests.get(url, params={"api_key": STEAMAPIS_APIKEY}))
+
+    print("start pooling {} requests...".format(len(pooled_reqs)), end=" ")
+    market_data = grequests.map(pooled_reqs[:], exception_handler=exception_handler)
+    market_data = [md.json() for md in market_data]
+    print("done")
+
     item_mds = []
     for imd in pubg_market_data.data:
-        data = get_market_data_for_app_and_name(PUBG_ID, imd['market_hash_name'])
-        item_market_data = models.ItemMarketData(data)
-        item_mds.append(item_market_data)
+        data = list(filter(lambda d: d['market_hash_name'] == imd['market_hash_name'], market_data))
+        if data:
+            data = data[0]
+            item_market_data = models.ItemMarketData(data)
+            item_mds.append(item_market_data)
+
+    print("ALL DONE")
 
 
 
 if __name__ == "__main__":
-    old_test()
-    # testing()
+    # old_test()
+    testing()
