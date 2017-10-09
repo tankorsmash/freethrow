@@ -5,6 +5,9 @@ import dateutil
 from operator import itemgetter
 import requests
 
+import matplotlib.pyplot as plt
+import numpy as np
+
 from pprint import pprint as pp
 
 from models import Item
@@ -58,7 +61,10 @@ def get_your_game_inventory(app_id, market_data=None):
         data = match_asset_to_description(assets, descriptions, asset_data['classid'])
         if market_data is not None:
             prices = list(filter(lambda md: md['market_hash_name'] == data['market_hash_name'], market_data))
-            data['prices'] = prices
+            if prices:
+                data['prices'] = prices[0]
+            else:
+                data['prices'] = {}
         # print(market_data)
         # print(data['prices'])
         item = Item(data)
@@ -90,27 +96,35 @@ def request_market_data_for_item(app_id, market_hash_name):
     response = _do_request(url)
     return response
 
-def get_market_data_for_item(app_id, market_hash_name):
+def get_market_data_for_app_and_name(app_id, market_hash_name):
     response = request_market_data_for_item(app_id, market_hash_name)
     data = response.json()
     return data
 
+def get_market_data_for_item(item):
+    return get_market_data_for_app_and_name(item.appid, item.market_hash_name)
 
 
-pubg_market_data = get_game_market_data(PUBG_ID)
-items = get_your_game_inventory(PUBG_ID, market_data=pubg_market_data)
-print ("found {} items".format(len(items)))
-item = items[0]
-item_data = get_market_data_for_item(PUBG_ID, item.market_hash_name)
-prices = item.prices
-# histogram = prices['histogram']
+def testing():
+    pubg_market_data = get_game_market_data(PUBG_ID)
+    items = get_your_game_inventory(PUBG_ID, market_data=pubg_market_data)
+    print ("found {} items".format(len(items)))
+    item = items[0]
+    # item_data = get_market_data_for_app_and_name(PUBG_ID, item.market_hash_name)
+    item_data = get_market_data_for_item(item)
+    prices = item.prices
+    # import ipdb; ipdb.set_trace(); #TODO
+    pp(prices._raw)
 
-import matplotlib.pyplot as plt
-import numpy as np
-median_data = item_data['median_avg_prices_15days']
-x = list(map(dateutil.parser.parse, map(itemgetter(0), median_data)))
-y = list(map(itemgetter(2), median_data))
-plt.plot(x, y)
-import ipdb; ipdb.set_trace(); #TODO
-# plt.plot_date(median_data)
-# response = request_game_inventory(PUBG_ID)
+    # histogram = prices['histogram']
+
+    median_data = item_data['median_avg_prices_15days']
+    # x = list(map(dateutil.parser.parse, map(itemgetter(0), median_data)))
+    # y = list(map(itemgetter(2), median_data))
+    # plt.plot(x, y)
+    # plt.title("ASDASDA")
+    # plt.plot_date(median_data)
+    # response = request_game_inventory(PUBG_ID)
+
+if __name__ == "__main__":
+    testing()
