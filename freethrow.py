@@ -118,7 +118,7 @@ def get_market_data_for_item(item):
     item.fill_market_data(data)
     return data
 
-def testing():
+def old_test():
     pubg_market_data = get_game_market_data(PUBG_ID)
     items = get_your_game_inventory(PUBG_ID, market_data=pubg_market_data)
     print ("found {} items".format(len(items)))
@@ -142,5 +142,16 @@ def testing():
     # plt.plot_date(median_data)
     # response = request_game_inventory(PUBG_ID)
 
+def testing():
+    pubg_market_data = get_game_market_data(PUBG_ID)
+    raw_items = []
+    for item_market_data in pubg_market_data.data:
+        data = get_market_data_for_app_and_name(PUBG_ID, item_market_data['market_hash_name'])
+        raw_items.append(data)
+
+    import ipdb; ipdb.set_trace(); #TODO
+
+
 if __name__ == "__main__":
-    testing()
+    old_test()
+    # testing()

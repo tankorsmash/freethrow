@@ -7,15 +7,15 @@ def convert_median_data(row):
     return [dateutil.parser.parse(row[0]), round(row[1], 3), row[2]]
 
 class MedianAvgPrices15(object):
-    def __init__(self, item, data):
-        self.item = item
+    def __init__(self, market_hash_name, data):
+        self.market_hash_name = market_hash_name
 
         self.data = list(map(convert_median_data, data))
 
         self._raw = data
 
     def __str__(self):
-        return "ItemMarketData for {}".format(self.item)
+        return "ItemMarketData for {}".format(self.market_hash_name)
 
     def __repr__(self):
         return "<{}>".format(str(self))
@@ -34,26 +34,27 @@ class MedianAvgPrices15(object):
 
 
 class ItemMarketData(object):
-    def __init__(self, item, data):
-        self.item = item
+    def __init__(self, data):
+        self.market_hash_name = data.get('market_hash_name')
 
         self.median_avg_prices_15days = MedianAvgPrices15(
-            item, data.get('median_avg_prices_15days', [])
+            self.market_hash_name,
+            data.get('median_avg_prices_15days', [])
         )
         self.histogram = data.get('histogram')
 
         self._raw = data
 
     def __str__(self):
-        return "ItemMarketData for {}".format(self.item)
+        return "ItemMarketData for {}".format(self.market_hash_name)
 
     def __repr__(self):
         return "<{}>".format(str(self))
 
 
 class ItemPrices(object):
-    def __init__(self, item, data):
-        self.item = item
+    def __init__(self, data):
+        self.market_hash_name = data.get('market_hash_name')
 
         self.avg = data.get('avg')
         self.latest = data.get('latest')
@@ -72,7 +73,7 @@ class ItemPrices(object):
         self._raw = data
 
     def __str__(self):
-        return "ItemPrice for {}".format(self.item)
+        return "ItemPrice for {}".format(self.market_hash_name)
 
     def __repr__(self):
         return "<{}>".format(str(self))
@@ -94,13 +95,13 @@ class Item(object):
         self.market_marketable_restriction = data.get('market_marketable_restriction')
         self.marketable = data.get('marketable')
 
-        self.prices = ItemPrices(self, data.get('prices'))
+        self.prices = ItemPrices(data.get('prices'))
         self.market_data = None
 
         self._raw = data
 
     def fill_market_data(self, data):
-        self.market_data = ItemMarketData(self, data)
+        self.market_data = ItemMarketData(data)
 
     def __str__(self):
         return "Item: {name}{amnt}::{cid}".format(
@@ -123,7 +124,7 @@ class GameMarketData(object):
         self._raw = data
 
     def __str__(self):
-        return "ItemPrice for {}".format(self.item)
+        return "GameMarketData for {}".format(self.appid)
 
     def __repr__(self):
         return "<{}>".format(str(self))
