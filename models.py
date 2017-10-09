@@ -1,40 +1,55 @@
-"""
-appid: 578080,
-classid: "2225519338",
-instanceid: "0",
-currency: 0,
-background_color: "",
-icon_url: "8HAGSsiO9OXk0bu4o76O6xabNUY8RRLf00e56zWT3IZUH8Flab9goIFna_837oFuZVQtrmh23qr2ro4kS68RfPtexg",
-icon_url_large: "8HAGSsiO9OXk0bu4o76O6xabNUY8RRLf00e56zWT3IZUH8Flab9goIFna_837oFuZVQtrmh23qr2ro4kS68RfPtexg",
-tradable: 1,
-name: "Bloody Shirt",
-type: "",
-market_name: "Bloody Shirt",
-market_hash_name: "Bloody Shirt",
-commodity: 1,
-market_tradable_restriction: 7,
-market_marketable_restriction: 7,
-marketable: 1
+import dateutil
 
-prices
-  'prices': {'avg': 0.61,
-             'latest': 0.53,
-             'max': 0.72,
-             'mean': 0.6,
-             'min': 0.51,
-             'safe': 0.56,
-             'safe_ts': {'last_24h': 0.57,
-                         'last_30d': 0.28,
-                         'last_7d': 0.56,
-                         'last_90d': 0.35},
-             'sold': {'avg_daily_volume': 3331,
-                      'last_24h': 2504,
-                      'last_30d': 108884,
-                      'last_7d': 23323,
-                      'last_90d': 225277},
-             'unstable': False,
-             'unstable_reason': False},
-"""
+import graphing
+
+
+def convert_median_data(row):
+    return [dateutil.parser.parse(row[0]), round(row[1], 3), row[2]]
+
+class MedianAvgPrices15(object):
+    def __init__(self, item, data):
+        self.item = item
+
+        self.data = list(map(convert_median_data, data))
+
+        self._raw = data
+
+    def __str__(self):
+        return "ItemMarketData for {}".format(self.item)
+
+    def __repr__(self):
+        return "<{}>".format(str(self))
+
+    def trendline(self, days=15):
+        return graphing.trendline(self, days)
+
+    def trendlines(self):
+        return {
+            3: self.trendline(3),
+            5: self.trendline(5),
+            10: self.trendline(10),
+            15: self.trendline(15),
+        }
+
+
+
+class ItemMarketData(object):
+    def __init__(self, item, data):
+        self.item = item
+
+        self.median_avg_prices_15days = MedianAvgPrices15(
+            item, data.get('median_avg_prices_15days')
+        )
+        self.histogram = data.get('histogram')
+
+        self._raw = data
+
+    def __str__(self):
+        return "ItemMarketData for {}".format(self.item)
+
+    def __repr__(self):
+        return "<{}>".format(str(self))
+
 
 class ItemPrices(object):
     def __init__(self, item, data):
@@ -80,8 +95,12 @@ class Item(object):
         self.marketable = data.get('marketable')
 
         self.prices = ItemPrices(self, data.get('prices'))
+        self.market_data = None
 
         self._raw = data
+
+    def fill_market_data(self, data):
+        self.market_data = ItemMarketData(self, data)
 
     def __str__(self):
         return "Item: {name}{amnt}::{cid}".format(

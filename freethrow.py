@@ -10,7 +10,8 @@ import numpy as np
 
 from pprint import pprint as pp
 
-from models import Item
+import models
+from graphing import trendline
 
 with open("private_config.json") as f:
     PRIVATE_CONFIG = json.load(f)
@@ -67,7 +68,7 @@ def get_your_game_inventory(app_id, market_data=None):
                 data['prices'] = {}
         # print(market_data)
         # print(data['prices'])
-        item = Item(data)
+        item = models.Item(data)
         items.append(item)
 
     return items
@@ -102,8 +103,9 @@ def get_market_data_for_app_and_name(app_id, market_hash_name):
     return data
 
 def get_market_data_for_item(item):
-    return get_market_data_for_app_and_name(item.appid, item.market_hash_name)
-
+    data = get_market_data_for_app_and_name(item.appid, item.market_hash_name)
+    item.fill_market_data(data)
+    return data
 
 def testing():
     pubg_market_data = get_game_market_data(PUBG_ID)
@@ -111,14 +113,13 @@ def testing():
     print ("found {} items".format(len(items)))
     item = items[0]
     # item_data = get_market_data_for_app_and_name(PUBG_ID, item.market_hash_name)
-    item_data = get_market_data_for_item(item)
+    get_market_data_for_item(item)
     prices = item.prices
-    # import ipdb; ipdb.set_trace(); #TODO
-    pp(prices)
 
-    # histogram = prices['histogram']
-
-    median_data = item_data['median_avg_prices_15days']
+    histogram = item.market_data.histogram
+    median_data = item.market_data.median_avg_prices_15days
+    pp(median_data.trendlines())
+    # pp(median_data.data)
     # x = list(map(dateutil.parser.parse, map(itemgetter(0), median_data)))
     # y = list(map(itemgetter(2), median_data))
     # plt.plot(x, y)
