@@ -4,6 +4,7 @@ import json
 import dateutil
 from operator import itemgetter
 import grequests, requests
+import concurrent.futures
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -162,14 +163,27 @@ def old_test():
 def testing():
     pubg_market_data = get_game_market_data(PUBG_ID)
 
+
+
     pooled_reqs = []
+    urls = []
     for imd in pubg_market_data.data:
         url = build_market_data_url_for_item(pubg_market_data.appid, imd['market_hash_name'])
-        pooled_reqs.append(grequests.get(url, params={"api_key": STEAMAPIS_APIKEY}))
+        urls.append(url)
+        # pooled_reqs.append(grequests.get(url, params={"api_key": STEAMAPIS_APIKEY}))
 
     print("start pooling {} requests...".format(len(pooled_reqs)), end=" ")
-    market_data = grequests.map(pooled_reqs[:], exception_handler=exception_handler)
+    market_data = []
+    with concurrent.futures.ThreadPoolExecutor(max_workers=100) as executor:
+        future_to_url = {executor.submit(lambda u: requests.get(u, params={"api_key": STEAMAPIS_APIKEY}), url) : url for url in urls}
+        for future in concurrent.futures.as_completed(future_to_url):
+            resp = future.result()
+            market_data.append(resp)
+
+    # market_data = grequests.map(pooled_reqs[:], exception_handler=exception_handler)
+
     market_data = [md.json() for md in market_data]
+    import ipdb; ipdb.set_trace(); #TODO
     print("done")
 
     item_mds = []
