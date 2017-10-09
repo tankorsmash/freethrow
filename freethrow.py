@@ -114,7 +114,7 @@ def testing():
     item_data = get_market_data_for_item(item)
     prices = item.prices
     # import ipdb; ipdb.set_trace(); #TODO
-    pp(prices._raw)
+    pp(prices)
 
     # histogram = prices['histogram']
 

@@ -37,7 +37,9 @@ prices
 """
 
 class ItemPrices(object):
-    def __init__(self, data):
+    def __init__(self, item, data):
+        self.item = item
+
         self.avg = data.get('avg')
         self.latest = data.get('latest')
         self.max = data.get('max')
@@ -53,6 +55,12 @@ class ItemPrices(object):
         self.unstable_reason = data.get('unstable_reason')
 
         self._raw = data
+
+    def __str__(self):
+        return "ItemPrice for {}".format(self.item)
+
+    def __repr__(self):
+        return "<{}>".format(str(self))
 
 
 class Item(object):
@@ -71,7 +79,7 @@ class Item(object):
         self.market_marketable_restriction = data.get('market_marketable_restriction')
         self.marketable = data.get('marketable')
 
-        self.prices = ItemPrices(data.get('prices'))
+        self.prices = ItemPrices(self, data.get('prices'))
 
         self._raw = data
 
