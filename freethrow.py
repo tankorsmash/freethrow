@@ -3,7 +3,7 @@
 import json
 import dateutil
 from operator import itemgetter
-import requests
+import requests, grequests
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -23,6 +23,9 @@ with open("public_config.json") as f:
 
 BASE_URL = "https://api.steamapis.com/"
 DEFAULT_CONTEXT = 2
+
+from requests_threads import AsyncSession
+session = AsyncSession(n=100)
 
 def _do_request(url):
     response = requests.get(BASE_URL+url, params={"api_key": STEAMAPIS_APIKEY})
@@ -145,6 +148,7 @@ def old_test():
     # response = request_game_inventory(PUBG_ID)
 
 def testing():
+
     pubg_market_data = get_game_market_data(PUBG_ID)
     item_mds = []
     for imd in pubg_market_data.data:
@@ -152,8 +156,30 @@ def testing():
         item_market_data = models.ItemMarketData(data)
         item_mds.append(item_market_data)
 
+async def _main():
+    rs = []
+    for _ in range(10):
+        rs.append(await session.get('http://httpbin.org/get'))
+        print(_)
+    print(len(rs))
+    return rs
+
+def do_stuff():
+    print("doing stuff")
+
+async def another():
+    qwe = await _main()
+    do_stuff()
+    import ipdb; ipdb.set_trace(); #TODO
+    print("after main")
+
+def run_async():
+    print("before")
+    qwe = session.run(another)
 
 
 if __name__ == "__main__":
-    old_test()
-    testing()
+    # old_test()
+    # testing()
+    run_async()
+    print("AAAFDFFFTTTER")
