@@ -111,3 +111,19 @@ class Item(object):
 
     def __repr__(self):
         return "<{}>".format(str(self))
+
+
+class GameMarketData(object):
+    def __init__(self, data):
+        self.appid = data.get('appid')
+        self.createdAt = data.get('createdAt')
+
+        self.data = data.get('data')
+
+        self._raw = data
+
+    def __str__(self):
+        return "ItemPrice for {}".format(self.item)
+
+    def __repr__(self):
+        return "<{}>".format(str(self))

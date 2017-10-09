@@ -61,7 +61,10 @@ def get_your_game_inventory(app_id, market_data=None):
     for asset_data in assets:
         data = match_asset_to_description(assets, descriptions, asset_data['classid'])
         if market_data is not None:
-            prices = list(filter(lambda md: md['market_hash_name'] == data['market_hash_name'], market_data))
+            prices = list(filter(
+                lambda md: md['market_hash_name'] == data['market_hash_name'],
+                market_data.data
+            ))
             if prices:
                 data['prices'] = prices[0]
             else:
@@ -84,8 +87,9 @@ def request_game_market_data(app_id):
 
 def get_game_market_data(app_id):
     response = request_game_market_data(app_id)
-    data = response.json()['data']
-    return data
+    data = response.json()
+    market_data = models.GameMarketData(data)
+    return market_data
 
 def request_market_data_for_item(app_id, market_hash_name):
     print('market data for app id {} and item {}...'.format(app_id, market_hash_name), end='')
