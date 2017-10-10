@@ -202,23 +202,35 @@ def async_get_all_market_data_in_app(market_data):
 
     return item_mds
 
-def testing():
-    pubg_market_data = cache.get_game_market_data_from_cache(PUBG_ID)
-    if pubg_market_data is None:
-        print("expired or invalid market data, getting new")
-        pubg_market_data = get_game_market_data(PUBG_ID)
+def get_or_create_game_and_item_market_data_from_cache(app_id):
+    market_data = cache.get_game_market_data_from_cache(app_id)
+    if market_data is None:
+        print("warn:: expired or invalid MARKET data, getting new")
+        market_data = get_game_market_data(app_id)
 
-    item_mds = cache.get_item_market_data_from_cache(PUBG_ID)
+    item_mds = cache.get_item_market_data_from_cache(app_id)
     if item_mds is None:
-        print("expired or invalid item data, getting new")
-        item_mds = async_get_all_market_data_in_app(pubg_market_data)
-    pubg_market_data.take_item_market_data(item_mds)
+        print("warn:: expired or invalid ITEM data, getting new")
+        item_mds = async_get_all_market_data_in_app(market_data)
+    market_data.take_item_market_data(item_mds)
 
-    cache.write_game_market_data_to_cache(pubg_market_data)
-    cache.write_item_market_data_to_cache(pubg_market_data)
-
+    cache.write_game_market_data_to_cache(market_data)
+    cache.write_item_market_data_to_cache(market_data)
     print("ALL DONE")
 
+    return market_data
+
+def testing():
+    market_data = get_or_create_game_and_item_market_data_from_cache(PUBG_ID)
+
+    trendlines = []
+    for item in market_data.item_market_data:
+        median_data = item.median_avg_prices_15days
+        trendlines.append((item.market_hash_name, median_data.trendlines()))
+
+    trendlines.sort(key=lambda tl: itemgetter(3)(tl[1]))
+    pp(trendlines[0])
+    pp(trendlines[-1])
 
 
 if __name__ == "__main__":
