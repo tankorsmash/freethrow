@@ -207,14 +207,16 @@ def testing():
     if pubg_market_data is None:
         print("expired or invalid market data, getting new")
         pubg_market_data = get_game_market_data(PUBG_ID)
-    #
-    # item_mds = async_get_all_market_data_in_app(pubg_market_data)
-    # pubg_market_data.take_item_market_data(item_mds)
-    #
-    cache.write_game_market_data_to_cache(pubg_market_data)
-    # cache.write_item_market_data_to_cache(pubg_market_data)
 
-    # import ipdb; ipdb.set_trace(); #TODO
+    item_mds = cache.get_item_market_data_from_cache(PUBG_ID)
+    if item_mds is None:
+        print("expired or invalid item data, getting new")
+        item_mds = async_get_all_market_data_in_app(pubg_market_data)
+    pubg_market_data.take_item_market_data(item_mds)
+
+    cache.write_game_market_data_to_cache(pubg_market_data)
+    cache.write_item_market_data_to_cache(pubg_market_data)
+
     print("ALL DONE")
 
 

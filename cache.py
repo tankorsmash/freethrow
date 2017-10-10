@@ -65,6 +65,30 @@ def write_game_market_data_to_cache(game_market_data):
         to_dump = game_market_data._raw
         json.dump(to_dump, f)
 
+def get_item_market_data_from_cache(app_id):
+    pathname = ITEM_MARKET_DATA_PATH_FORMAT.format(
+        appid=app_id,
+    )
+    path = pathlib.Path(pathname)
+    if not path.exists():
+        return None
+
+    created_at = path.stat().st_mtime
+    now = time.time()
+    if (now - created_at) > MINUTES_5:
+        print("item market data cache expired")
+        return None
+
+    try:
+        with path.open() as f:
+            data = json.load(f)
+    except Exception as e:
+        print("open json cache failed", e)
+        import ipdb; ipdb.set_trace(); #TODO
+
+    return list(map(models.ItemMarketData, data))
+
+
 def write_item_market_data_to_cache(game_market_data):
     if not game_market_data._raw_item_market_data:
         print("no item market data on GameMarketData, aborting cache")
@@ -79,5 +103,3 @@ def write_item_market_data_to_cache(game_market_data):
     with path.open("w") as f:
         to_dump = game_market_data._raw_item_market_data
         json.dump(to_dump, f)
-
-
