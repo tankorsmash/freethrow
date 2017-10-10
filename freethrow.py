@@ -160,40 +160,42 @@ def old_test():
 
     trendlines.sort(key=lambda tl: itemgetter(3)(tl[1]))
 
-def testing():
-    pubg_market_data = get_game_market_data(PUBG_ID)
-
-
-
-    pooled_reqs = []
+def async_get_all_market_data_in_app(market_data):
     urls = []
-    for imd in pubg_market_data.data:
-        url = build_market_data_url_for_item(pubg_market_data.appid, imd['market_hash_name'])
+    for imd in market_data.data:
+        url = build_market_data_url_for_item(market_data.appid, imd['market_hash_name'])
         urls.append(url)
-        # pooled_reqs.append(grequests.get(url, params={"api_key": STEAMAPIS_APIKEY}))
 
-    print("start pooling {} requests...".format(len(pooled_reqs)), end=" ")
-    market_data = []
+    print("start pooling {} requests...".format(len(urls)), end=" ")
+    response_data = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=100) as executor:
         future_to_url = {executor.submit(lambda u: requests.get(u, params={"api_key": STEAMAPIS_APIKEY}), url) : url for url in urls}
         for future in concurrent.futures.as_completed(future_to_url):
             resp = future.result()
-            market_data.append(resp)
+            response_data.append(resp)
 
-    # market_data = grequests.map(pooled_reqs[:], exception_handler=exception_handler)
-
-    market_data = [md.json() for md in market_data]
-    import ipdb; ipdb.set_trace(); #TODO
+    response_data = [md.json() for md in response_data]
     print("done")
 
     item_mds = []
-    for imd in pubg_market_data.data:
-        data = list(filter(lambda d: d['market_hash_name'] == imd['market_hash_name'], market_data))
+    for imd in market_data.data:
+        data = list(filter(
+            lambda d: d['market_hash_name'] == imd['market_hash_name'],
+            response_data
+        ))
         if data:
             data = data[0]
             item_market_data = models.ItemMarketData(data)
             item_mds.append(item_market_data)
 
+    return item_mds
+
+def testing():
+    pubg_market_data = get_game_market_data(PUBG_ID)
+
+    item_mds = async_get_all_market_data_in_app(pubg_market_data)
+
+    import ipdb; ipdb.set_trace(); #TODO
     print("ALL DONE")
 
 
