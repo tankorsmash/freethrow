@@ -79,7 +79,7 @@ def get_your_game_inventory(app_id):
     items = []
     for asset_data in assets:
         data = match_asset_to_description(assets, descriptions, asset_data['classid'])
-        item = models.ItemOwned(data)
+        item = models.ItemLive(data)
         items.append(item)
 
     return items
@@ -133,7 +133,7 @@ def get_and_fill_market_data_for_item(item):
 
 def exception_handler(request, exception):
     print(exception)
-    import ipdb; ipdb.set_trace(); #TODO
+    import ipdb; ipdb.set_trace();
 
 def async_get_all_market_data_in_app(market_data):
     """
@@ -169,7 +169,7 @@ def async_get_all_market_data_in_app(market_data):
                     data.append(d)
             except Exception as e:
                 print(type(e), e)
-                import ipdb; ipdb.set_trace(); #TODO
+                import ipdb; ipdb.set_trace();
 
         if data:
             data = data[0]
@@ -217,13 +217,30 @@ def testing():
     app_id = PUBG_ID
     market_data = get_or_create_game_and_item_market_data_from_cache(app_id)
 
+    my_inventory = get_your_game_inventory(app_id)
+
+    print('getting market history', end=' ')
     session = requests.Session()
     cookies = browser_cookie3.chrome()
     start_offset = 0
     url = "https://steamcommunity.com/market/myhistory/render/?query=&start={}&count=500".format(start_offset)
     response = session.get(url, cookies=cookies)
     data = response.json()
-    import ipdb; ipdb.set_trace(); #TODO
+    print('done')
+
+
+    context = "2"
+    for item_id, history_item in data['assets'][app_id][context].items():
+        inventory_item = list(filter(
+            lambda i: i.market_hash_name == history_item['market_hash_name'],
+            my_inventory
+        ))
+
+        if inventory_item:
+            inventory_keys = set(inventory_item[0]._raw.keys())
+            history_keys = set(history_item.keys())
+            print('inventory only', inventory_keys - history_keys)
+            print('history only',  history_keys - inventory_keys)
 
     print("Done")
 

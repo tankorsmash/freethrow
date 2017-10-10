@@ -81,7 +81,7 @@ class ItemPricesData(object):
     def __repr__(self):
         return "<{}>".format(str(self))
 
-class ItemOwned(object):
+class ItemLive(object):
     def __init__(self, data):
         self.name = data.get('name')
         self.market_hash_name = data.get('market_hash_name')
@@ -109,7 +109,7 @@ class ItemOwned(object):
         self.market_data = ItemMarketData(data)
 
     def __str__(self):
-        return "ItemOwned: {name}{amnt}::{cid}".format(
+        return "ItemLive: {name}{amnt}::{cid}".format(
             name=self.market_hash_name,
             cid=self.classid,
             amnt="x"+self.amount if int(self.amount) > 1 else "",
