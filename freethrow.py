@@ -3,7 +3,8 @@
 import json
 import dateutil
 import concurrent.futures
-from operator import itemgetter
+from operator import itemgetter, attrgetter
+import operator
 from pprint import pprint as pp
 
 import grequests, requests
@@ -27,6 +28,20 @@ with open("public_config.json") as f:
 
 BASE_URL = "https://api.steamapis.com/"
 DEFAULT_CONTEXT = 2
+
+MARKET_STATUS_LIVE = 2
+MARKET_STATUS_SOLD = 4
+MARKET_STATUS_ASOFYETUNKNOWN = 8
+
+def filterby_a(iterable, attrname, expected_val=True, op=operator.eq):
+    return list(filter(lambda a: op(attrgetter(attrname)(a), expected_val), iterable))
+
+def getby_a(iterable, attrname, expected_val=True, op=operator.eq):
+    result = list(filter(lambda a: op(attrgetter(attrname)(a), expected_val), iterable))
+    if result:
+        return result[0]
+    else:
+        return []
 
 def _do_request(url):
     response = requests.get(url, params={"api_key": STEAMAPIS_APIKEY})
@@ -213,12 +228,7 @@ def get_performers(app_id):
     print("most 3 gaining")
     pp(trendlines[-4:-1])
 
-def testing():
-    app_id = PUBG_ID
-    market_data = get_or_create_game_and_item_market_data_from_cache(app_id)
-
-    my_inventory = get_your_game_inventory(app_id)
-
+def get_market_history():
     print('getting market history', end=' ')
     session = requests.Session()
     cookies = browser_cookie3.chrome()
@@ -230,21 +240,34 @@ def testing():
 
 
     context = "2"
-    for item_id, history_item in data['assets'][app_id][context].items():
-        inventory_item = list(filter(
-            lambda i: i.market_hash_name == history_item['market_hash_name'],
-            my_inventory
-        ))
+    history_items = []
 
-        if inventory_item:
-            inventory_keys = set(inventory_item[0]._raw.keys())
-            history_keys = set(history_item.keys())
-            print('inventory only', inventory_keys - history_keys)
-            print('history only',  history_keys - inventory_keys)
+    assets = data['assets']
+    app_ids = assets.keys()
+    for app_id in app_ids:
+        contexts = assets[app_id]
+        for context in contexts.keys():
+            for item_id, history_item_raw in contexts[context].items():
+                history_item = models.ItemLiveMarket(history_item_raw)
+                history_items.append(history_item)
 
+    print(f"found {len(history_items)}")
+    #make sure we find all things inside
+    return history_items
+
+def testing():
+    print("start")
+    app_id = PUBG_ID
+    market_data = get_or_create_game_and_item_market_data_from_cache(app_id)
+
+    my_inventory = get_your_game_inventory(app_id)
+
+    history_items = get_market_history()
     print("Done")
 
     # get_performers(PUBG_ID)
+
+    return history_items
 
 
 if __name__ == "__main__":

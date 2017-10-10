@@ -118,6 +118,34 @@ class ItemLive(object):
     def __repr__(self):
         return "<{}>".format(str(self))
 
+class ItemLiveMarket(ItemLive):
+    """
+    same as ItemLive only it has a few more keys
+    """
+
+    def __init__(self, data):
+        super().__init__(data)
+
+        self.status = data.get('status')
+        self.id = data.get('id')
+
+        self.owner = data.get('owner')
+        self.app_icon = data.get('app_icon')
+
+        self.unowned_contextid = data.get('unowned_contextid')
+        self.unowned_id = data.get('unowned_id')
+
+        self.rollback_new_contextid = data.get('rollback_new_contextid')
+        self.rollback_new_id = data.get('rollback_new_id')
+
+        self.original_amount = data.get('original_amount')
+
+    def __str__(self):
+        return "ItemLiveMarket: {name}::{cid}".format(
+            name=self.market_hash_name,
+            cid=self.classid,
+        )
+
 
 class GameMarketData(object):
     def __init__(self, data):
