@@ -12,6 +12,7 @@ import numpy as np
 from pprint import pprint as pp
 
 import models
+import cache
 from graphing import trendline
 
 with open("private_config.json") as f:
@@ -206,6 +207,9 @@ def testing():
 
     item_mds = async_get_all_market_data_in_app(pubg_market_data)
     pubg_market_data.take_item_market_data(item_mds)
+
+    cache.write_game_market_data_to_cache(pubg_market_data)
+    cache.write_item_market_data_to_cache(pubg_market_data)
 
     import ipdb; ipdb.set_trace(); #TODO
     print("ALL DONE")

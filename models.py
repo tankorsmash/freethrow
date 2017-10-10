@@ -16,7 +16,7 @@ class MedianAvgPrices15(object):
         self._raw = data
 
     def __str__(self):
-        return "ItemMarketData for {}".format(self.market_hash_name)
+        return "MedianAvgPrices15 for {}".format(self.market_hash_name)
 
     def __repr__(self):
         return "<{}>".format(str(self))
@@ -123,7 +123,9 @@ class GameMarketData(object):
         self.createdAt = data.get('createdAt')
 
         self.item_prices = self.build_item_prices(data['data'])
-        self.item_market_data = []
+
+        self.item_market_data = [] #fill from api elsewhere
+        self._raw_item_market_data = [] #fill from api elsewhere
 
         self.data = data.get('data')
         self._raw = data
@@ -144,12 +146,24 @@ class GameMarketData(object):
 
     def take_item_market_data(self, item_mds):
         hash_names = list(map(attrgetter("market_hash_name"), self.item_prices))
-        matching_mds = list(filter(lambda md: md.market_hash_name in hash_names, item_mds))
+        matching_mds = list(filter(
+            lambda md: md.market_hash_name in hash_names,
+            item_mds
+        ))
         print('from {} input mds, I found {}'.format(len(item_mds), len(matching_mds)))
 
         existing_hash_names = list(map(attrgetter("market_hash_name"), self.item_market_data))
-        unique_mds = list(filter(lambda md: md.market_hash_name not in existing_hash_names, matching_mds))
+        unique_mds = list(filter(
+            lambda md: md.market_hash_name not in existing_hash_names,
+            matching_mds
+        ))
         print('of those {} new mds, I found {} new ones'.format(len(matching_mds), len(unique_mds)))
         for md in unique_mds:
             self.item_market_data.append(md)
+
+        #update raw_item_market_data
+        raw_item_market_data = []
+        for item_md in self.item_market_data:
+            raw_item_market_data.append(item_md._raw)
+        self._raw_item_market_data = raw_item_market_data
 
