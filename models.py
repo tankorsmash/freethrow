@@ -121,6 +121,7 @@ class GameMarketData(object):
         self.appid = data.get('appID')
         self.createdAt = data.get('createdAt')
 
+        self.item_prices = self.build_item_prices(data['data'])
         self.data = data.get('data')
 
         self._raw = data
@@ -130,3 +131,11 @@ class GameMarketData(object):
 
     def __repr__(self):
         return "<{}>".format(str(self))
+
+    def build_item_prices(self, data):
+        item_prices = []
+        for d in data:
+            prices = ItemPricesData(d)
+            item_prices.append(prices)
+
+        return item_prices

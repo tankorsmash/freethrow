@@ -43,7 +43,7 @@ def match_asset_to_description(assets, descriptions, cid):
     result.update(**description)
     return result
 
-def request_your_game_inventory(app_id):
+def _request_your_game_inventory(app_id):
     print('requesting your inventory for app id {}...'.format(app_id), end='')
     url = BASE_URL+"steam/inventory/{sid64}/{app_id}/{ctxt}/".format(
             sid64=STEAMID_64,
@@ -68,8 +68,8 @@ def bind_my_items_to_market_data(items, market_data):
 
 
 
-def get_your_game_inventory(app_id, market_data=None):
-    response = request_your_game_inventory(app_id)
+def get_your_game_inventory(app_id):
+    response = _request_your_game_inventory(app_id)
 
     assets = response.json()['assets']
     descriptions = response.json()['descriptions']
@@ -87,7 +87,7 @@ def build_game_market_data_url(app_id):
         app_id=PUBG_ID,
     )
 
-def request_game_market_data(app_id):
+def _request_game_market_data(app_id):
     print('requesting static inventory for app id {}...'.format(app_id), end='')
     url = build_game_market_data_url(app_id)
     response = _do_request(url)
@@ -95,7 +95,10 @@ def request_game_market_data(app_id):
     return response
 
 def get_game_market_data(app_id):
-    response = request_game_market_data(app_id)
+    """
+    app details and list of all items with their prices within
+    """
+    response = _request_game_market_data(app_id)
     data = response.json()
     market_data = models.GameMarketData(data)
     return market_data
@@ -106,7 +109,7 @@ def build_market_data_url_for_item(app_id, market_hash_name):
         market_hash_name=market_hash_name,
     )
 
-def request_market_data_for_app_and_name(app_id, market_hash_name):
+def _request_market_data_for_app_and_name(app_id, market_hash_name):
     print('market data for app id {} and item {}...'.format(app_id, market_hash_name), end='')
     url = build_market_data_url_for_item(app_id, market_hash_name)
     response = _do_request(url)
@@ -114,7 +117,7 @@ def request_market_data_for_app_and_name(app_id, market_hash_name):
     return response
 
 def get_market_data_for_app_and_name(app_id, market_hash_name):
-    response = request_market_data_for_app_and_name(app_id, market_hash_name)
+    response = _request_market_data_for_app_and_name(app_id, market_hash_name)
     data = response.json()
     return data
 
@@ -161,6 +164,9 @@ def old_test():
     trendlines.sort(key=lambda tl: itemgetter(3)(tl[1]))
 
 def async_get_all_market_data_in_app(market_data):
+    """
+    get histogram and 15 day history for the items within an app's item list
+    """
     urls = []
     for imd in market_data.data:
         url = build_market_data_url_for_item(market_data.appid, imd['market_hash_name'])
