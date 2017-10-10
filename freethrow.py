@@ -185,10 +185,15 @@ def async_get_all_market_data_in_app(market_data):
 
     item_mds = []
     for imd in market_data.data:
-        data = list(filter(
-            lambda d: d['market_hash_name'] == imd['market_hash_name'],
-            response_data
-        ))
+        try:
+            data = list(filter(
+                lambda d: d['market_hash_name'] == imd['market_hash_name'],
+                response_data
+            ))
+        except Exception as e:
+            print(e)
+            import ipdb; ipdb.set_trace(); #TODO
+
         if data:
             data = data[0]
             item_market_data = models.ItemMarketData(data)
@@ -200,6 +205,7 @@ def testing():
     pubg_market_data = get_game_market_data(PUBG_ID)
 
     item_mds = async_get_all_market_data_in_app(pubg_market_data)
+    pubg_market_data.take_item_market_data(item_mds)
 
     import ipdb; ipdb.set_trace(); #TODO
     print("ALL DONE")
