@@ -22,6 +22,7 @@ with open("private_config.json") as f:
 with open("public_config.json") as f:
     PUBLIC_CONFIG = json.load(f)
     PUBG_ID = PUBLIC_CONFIG['app_ids']['pubg']
+    CSGO_ID = PUBLIC_CONFIG['app_ids']['csgo']
 
 BASE_URL = "https://api.steamapis.com/"
 DEFAULT_CONTEXT = 2
@@ -48,7 +49,7 @@ def _request_your_game_inventory(app_id):
     print('requesting your inventory for app id {}...'.format(app_id), end='')
     url = BASE_URL+"steam/inventory/{sid64}/{app_id}/{ctxt}/".format(
             sid64=STEAMID_64,
-            app_id=PUBG_ID,
+            app_id=app_id,
             ctxt=DEFAULT_CONTEXT)
     response = _do_request(url)
     print('done;')
@@ -85,7 +86,7 @@ def get_your_game_inventory(app_id):
 
 def build_game_market_data_url(app_id):
     return BASE_URL+"market/items/{app_id}/".format(
-        app_id=PUBG_ID,
+        app_id=app_id,
     )
 
 def _request_game_market_data(app_id):
@@ -106,7 +107,7 @@ def get_game_market_data(app_id):
 
 def build_market_data_url_for_item(app_id, market_hash_name):
     return BASE_URL+"market/item/{app_id}/{market_hash_name}".format(
-        app_id=PUBG_ID,
+        app_id=app_id,
         market_hash_name=market_hash_name,
     )
 
@@ -134,36 +135,6 @@ def exception_handler(request, exception):
     print(exception)
     import ipdb; ipdb.set_trace(); #TODO
 
-def old_test():
-    print("starting old_test")
-    pubg_market_data = get_game_market_data(PUBG_ID)
-    items = get_your_game_inventory(PUBG_ID)
-    bind_my_items_to_market_data(items, pubg_market_data)
-    print ("found {} items".format(len(items)))
-
-    pooled_reqs = []
-    for item in items:
-        if item.marketable:
-            url = build_market_data_url_for_item(item.appid, item.market_hash_name)
-            pooled_reqs.append(grequests.get(url, params={"api_key": STEAMAPIS_APIKEY}))
-
-    print("start pooling {} requests...".format(len(pooled_reqs)), end=" ")
-    market_data = grequests.map(pooled_reqs, exception_handler=exception_handler)
-    market_data = [md.json() for md in market_data]
-    print("done")
-
-    trendlines = []
-    for item in items:
-        if item.marketable:
-            data = list(filter(lambda d: d['market_hash_name'] == item.market_hash_name, market_data))
-            if data:
-                item.fill_market_data(data[0])
-
-            median_data = item.market_data.median_avg_prices_15days
-            trendlines.append((item.market_hash_name, median_data.trendlines()))
-
-    trendlines.sort(key=lambda tl: itemgetter(3)(tl[1]))
-
 def async_get_all_market_data_in_app(market_data):
     """
     get histogram and 15 day history for the items within an app's item list
@@ -173,6 +144,11 @@ def async_get_all_market_data_in_app(market_data):
         url = build_market_data_url_for_item(market_data.appid, imd['market_hash_name'])
         urls.append(url)
 
+    url_limit = 100
+    if len(urls) > url_limit:
+        print("found {} urls but limiting to {}".format(len(urls), url_limit))
+        urls = urls[:100]
+
     print("start pooling {} requests...".format(len(urls)), end=" ")
     response_data = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=100) as executor:
@@ -181,18 +157,22 @@ def async_get_all_market_data_in_app(market_data):
             resp = future.result()
             response_data.append(resp)
 
-    response_data = [md.json() for md in response_data]
+    json_data = [resp.json() for resp in response_data]
     print("done")
 
     item_mds = []
     for imd in market_data.data:
         try:
-            data = list(filter(
-                lambda d: d['market_hash_name'] == imd['market_hash_name'],
-                response_data
-            ))
+            data = []
+            for d in json_data:
+                try:
+                    if d['market_hash_name'] == imd['market_hash_name']:
+                        data.append(d)
+                except Exception as e:
+                    print(type(e), e)
+                    import ipdb; ipdb.set_trace(); #TODO
         except Exception as e:
-            print(e)
+            print(type(e), e)
             import ipdb; ipdb.set_trace(); #TODO
 
         if data:
@@ -221,7 +201,7 @@ def get_or_create_game_and_item_market_data_from_cache(app_id):
     return market_data
 
 def testing():
-    market_data = get_or_create_game_and_item_market_data_from_cache(PUBG_ID)
+    market_data = get_or_create_game_and_item_market_data_from_cache(CSGO_ID)
 
     trendlines = []
     for item in market_data.item_market_data:
@@ -229,8 +209,10 @@ def testing():
         trendlines.append((item.market_hash_name, median_data.trendlines()))
 
     trendlines.sort(key=lambda tl: itemgetter(3)(tl[1]))
-    pp(trendlines[0])
-    pp(trendlines[-1])
+    print("most 3 losing")
+    pp(trendlines[0:3])
+    print("most 3 gaining")
+    pp(trendlines[-4:-1])
 
 
 if __name__ == "__main__":
