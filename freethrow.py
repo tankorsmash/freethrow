@@ -2,14 +2,15 @@
 
 import json
 import dateutil
-from operator import itemgetter
-import grequests, requests
 import concurrent.futures
+from operator import itemgetter
+from pprint import pprint as pp
+
+import grequests, requests
 
 import matplotlib.pyplot as plt
 import numpy as np
-
-from pprint import pprint as pp
+import browser_cookie3
 
 import models
 import cache
@@ -195,8 +196,7 @@ def get_or_create_game_and_item_market_data_from_cache(app_id):
 
     return market_data
 
-def testing():
-    app_id = PUBG_ID
+def get_performers(app_id):
     market_data = get_or_create_game_and_item_market_data_from_cache(app_id)
     my_inventory = get_your_game_inventory(app_id)
 
@@ -213,7 +213,22 @@ def testing():
     print("most 3 gaining")
     pp(trendlines[-4:-1])
 
+def testing():
+    app_id = PUBG_ID
+    market_data = get_or_create_game_and_item_market_data_from_cache(app_id)
+
+    session = requests.Session()
+    cookies = browser_cookie3.chrome()
+    start_offset = 0
+    url = "https://steamcommunity.com/market/myhistory/render/?query=&start={}&count=500".format(start_offset)
+    response = session.get(url, cookies=cookies)
+    data = response.json()
+    import ipdb; ipdb.set_trace(); #TODO
+
+    print("Done")
+
+    # get_performers(PUBG_ID)
+
 
 if __name__ == "__main__":
-    # old_test()
     testing()
