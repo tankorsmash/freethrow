@@ -1,5 +1,6 @@
 import os
 import json
+import time
 import pathlib
 
 import models
@@ -31,7 +32,27 @@ ITEM_MARKET_DATA_PATH_FORMAT = "./{root}/{{appid}}/item_market_data.json".format
 )
 
 def get_game_market_data_from_cache(app_id):
-    pass
+    pathname = GAME_MARKET_DATA_PATH_FORMAT.format(
+        appid=app_id,
+    )
+    path = pathlib.Path(pathname)
+    if not path.exists():
+        return None
+
+    created_at = path.stat().st_mtime
+    now = time.time()
+    if (now - created_at) > HOURS_1:
+        print("cache expired")
+        return None
+
+    try:
+        with path.open() as f:
+            data = json.load(f)
+    except Exception as e:
+        print("open json cache failed", e)
+        import ipdb; ipdb.set_trace(); #TODO
+
+    return models.GameMarketData(data)
 
 def write_game_market_data_to_cache(game_market_data):
     pathname = GAME_MARKET_DATA_PATH_FORMAT.format(
