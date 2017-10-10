@@ -57,24 +57,26 @@ class ItemPricesData(object):
     def __init__(self, data):
         self.market_hash_name = data.get('market_hash_name')
 
-        self.avg = data.get('avg')
-        self.latest = data.get('latest')
-        self.max = data.get('max')
-        self.mean = data.get('mean')
-        self.min = data.get('min')
+        price_data = data.get('prices', {})
 
-        self.safe = data.get('safe')
-        self.safe_ts = data.get('safe_ts')
+        self.avg = price_data.get('avg')
+        self.latest = price_data.get('latest')
+        self.max = price_data.get('max')
+        self.mean = price_data.get('mean')
+        self.min = price_data.get('min')
 
-        self.sold = data.get('sold')
+        self.safe = price_data.get('safe')
+        self.safe_ts = price_data.get('safe_ts')
 
-        self.unstable = data.get('unstable')
-        self.unstable_reason = data.get('unstable_reason')
+        self.sold = price_data.get('sold')
+
+        self.unstable = price_data.get('unstable')
+        self.unstable_reason = price_data.get('unstable_reason')
 
         self._raw = data
 
     def __str__(self):
-        return "ItemPrice for {}".format(self.market_hash_name)
+        return "ItemPriceData for {}".format(self.market_hash_name)
 
     def __repr__(self):
         return "<{}>".format(str(self))

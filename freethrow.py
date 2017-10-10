@@ -62,12 +62,11 @@ def bind_my_items_to_market_data(items, market_data):
             market_data.data
         ))
         if prices:
-            prices = prices[0]
+            price_data = prices[0]
         else:
-            prices = {}
+            price_data = {}
 
-        item.fill_prices_data(prices)
-
+        item.fill_prices_data(price_data)
 
 
 def get_your_game_inventory(app_id):
@@ -162,18 +161,14 @@ def async_get_all_market_data_in_app(market_data):
 
     item_mds = []
     for imd in market_data.data:
-        try:
-            data = []
-            for d in json_data:
-                try:
-                    if d['market_hash_name'] == imd['market_hash_name']:
-                        data.append(d)
-                except Exception as e:
-                    print(type(e), e)
-                    import ipdb; ipdb.set_trace(); #TODO
-        except Exception as e:
-            print(type(e), e)
-            import ipdb; ipdb.set_trace(); #TODO
+        data = []
+        for d in json_data:
+            try:
+                if d['market_hash_name'] == imd['market_hash_name']:
+                    data.append(d)
+            except Exception as e:
+                print(type(e), e)
+                import ipdb; ipdb.set_trace(); #TODO
 
         if data:
             data = data[0]
@@ -201,7 +196,11 @@ def get_or_create_game_and_item_market_data_from_cache(app_id):
     return market_data
 
 def testing():
-    market_data = get_or_create_game_and_item_market_data_from_cache(CSGO_ID)
+    app_id = PUBG_ID
+    market_data = get_or_create_game_and_item_market_data_from_cache(app_id)
+    my_inventory = get_your_game_inventory(app_id)
+
+    bind_my_items_to_market_data(my_inventory, market_data)
 
     trendlines = []
     for item in market_data.item_market_data:
