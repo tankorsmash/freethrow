@@ -12,6 +12,7 @@ import grequests, requests
 import matplotlib.pyplot as plt
 import numpy as np
 import browser_cookie3
+from bs4 import BeautifulSoup
 
 import models
 import cache
@@ -228,6 +229,26 @@ def get_performers(app_id):
     print("most 3 gaining")
     pp(trendlines[-4:-1])
 
+
+
+def parse_results_html_from_response(results_html):
+    soup = BeautifulSoup(results_html, 'html.parser')
+
+    _classes = "market_listing_row row market_recent_listing_row"
+    rows = soup.find_all( "div", {"class": _classes})
+    for row in rows:
+        game_name = row.find("span", {"class":"market_listing_game_name"}).text.strip()
+        listing_price = row.find('div', {'class': 'market_listing_price'}).strip()
+
+        acted_on, listed_on = row.find_all("div", {"class":"market_listing_right_cell market_listing_listed_date can_combine"})
+        acted_on = acted_on.strip()
+        listed_on = listed_on.strip()
+
+        img = row.find("img", {"class": "market_listing_item_img"})
+        item_img = img.attrs.get('src')
+        item_img = item_img.replace("https://steamcommunity-a.akamaihd.net/economy/image/", "")
+        pass
+
 def get_market_history():
     print('getting market history', end=' ')
     session = requests.Session()
@@ -237,6 +258,8 @@ def get_market_history():
     response = session.get(url, cookies=cookies)
     data = response.json()
     print('done')
+
+    parse_results_html_from_response(data.get('results_html', ''))
 
 
     context = "2"
@@ -252,7 +275,7 @@ def get_market_history():
                 history_items.append(history_item)
 
     print(f"found {len(history_items)}")
-    #make sure we find all things inside
+
     return history_items
 
 def testing():
@@ -263,6 +286,7 @@ def testing():
     my_inventory = get_your_game_inventory(app_id)
 
     history_items = get_market_history()
+
     print("Done")
 
     # get_performers(PUBG_ID)
