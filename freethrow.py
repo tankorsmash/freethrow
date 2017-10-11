@@ -50,7 +50,7 @@ def _do_request(url):
         response.raise_for_status()
     except Exception as e:
         print(e)
-        import ipdb; ipdb.set_trace(); #TODO
+        import ipdb; ipdb.set_trace();
     return response
 
 def match_asset_to_description(assets, descriptions, cid):
@@ -234,20 +234,36 @@ def get_performers(app_id):
 def parse_results_html_from_response(results_html):
     soup = BeautifulSoup(results_html, 'html.parser')
 
-    _classes = "market_listing_row row market_recent_listing_row"
+
+    history_data = []
+
+    _classes = "market_listing_row market_recent_listing_row"
     rows = soup.find_all( "div", {"class": _classes})
     for row in rows:
         game_name = row.find("span", {"class":"market_listing_game_name"}).text.strip()
-        listing_price = row.find('div', {'class': 'market_listing_price'}).strip()
+        raw_price = row.find('div', {'class': 'market_listing_price'})
+        listing_price = raw_price.strip() if raw_price else None
 
         acted_on, listed_on = row.find_all("div", {"class":"market_listing_right_cell market_listing_listed_date can_combine"})
-        acted_on = acted_on.strip()
-        listed_on = listed_on.strip()
+        acted_on = acted_on.text.strip() if acted_on.text else None
+        listed_on = listed_on.text.strip() if listed_on.text else None
 
         img = row.find("img", {"class": "market_listing_item_img"})
         item_img = img.attrs.get('src')
         item_img = item_img.replace("https://steamcommunity-a.akamaihd.net/economy/image/", "")
-        pass
+
+        hist_data = {
+            'name': game_name,
+            'listing_price': listing_price,
+
+            'acted_on': acted_on,
+            'listed_on': listed_on,
+
+            'img_path_rel': item_img,
+        }
+        history_data.append(hist_data)
+
+    return history_data
 
 def get_market_history():
     print('getting market history', end=' ')
@@ -259,7 +275,7 @@ def get_market_history():
     data = response.json()
     print('done')
 
-    parse_results_html_from_response(data.get('results_html', ''))
+    history_data = parse_results_html_from_response(data.get('results_html', ''))
 
 
     context = "2"
